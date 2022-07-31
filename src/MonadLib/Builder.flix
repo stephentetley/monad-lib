@@ -84,6 +84,15 @@ namespace MonadLib/Builder {
         let Builder(ma1) = ma;
         ma1(s, k)
 
+    def apply1WithHandler(ma: Builder[r, ka, st, a], 
+                            s: st, 
+                            k: a -> Result[ka, String] & r, 
+                            handleK: String -> Result[ka, String] & r): Result[ka, String] & r =
+        let Builder(ma1) = ma;
+        match ma1(s, k) {
+            case Err(msg) => handleK(msg)
+            case Ok(a)    => Ok(a)
+        }
 
     ///
     /// Returns the result of applying `ma` to the state `s`.
@@ -120,6 +129,11 @@ namespace MonadLib/Builder {
 
     pub def throwError(msg: String): Builder[r, ka, st, a] = 
         Builder((_, _) -> Err(msg) as & r)
+
+    pub def swapError(msg: String, ma: Builder[r, ka, st, a]): Builder[r, ka, st, a] = 
+        Builder((s, k) -> 
+            apply1WithHandler(ma, s, a -> k(a), _ -> Err(msg) as & r)
+        )
 
     pub def empty(): Builder[r, ka, st, a] = throwError("empty")
 
