@@ -38,7 +38,11 @@ namespace MonadLib {
             MonadLib/Evaluator.flatMap(k, x)
     }
 
-    // Orelse avialable for Evaluator because it is expected to only be reading the state
+    instance MonadZero[Evaluator[r, ka, st]] { 
+        pub def empty(): Evaluator[r, ka, st, a] = MonadLib/Evaluator.empty()
+    }
+
+    // Orelse available for Evaluator because it is expected to only be reading the state
 
     instance MonadLib.MonadOr[Evaluator[r, ka, st]] { 
         pub def orelse(ma: Evaluator[r, ka, st, a], mb: Evaluator[r, ka, st, a]): Evaluator[r, ka, st, a] =
@@ -112,6 +116,9 @@ namespace MonadLib/Evaluator {
 
     pub def throwError(msg: String): Evaluator[r, ka, st, a] = 
         Evaluator((_, _) -> Err(msg) as & r)
+
+    pub def empty(): Evaluator[r, ka, st, a] = throwError("empty")
+
 
     pub def liftGetter(f: st -> a & ef): Evaluator[r, ka, st, a] & ef = 
         Evaluator((s, k) ->

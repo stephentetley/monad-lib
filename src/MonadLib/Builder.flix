@@ -60,6 +60,10 @@ namespace MonadLib {
             MonadLib/Builder.flatMap(f, ma)
     }
 
+    instance MonadZero[Builder[r, ka, st]] { 
+        pub def empty(): Builder[r, ka, st, a] = MonadLib/Builder.empty()
+    }
+
     /// No Orelse for Builder because it is expected to be updating the state
 
 }
@@ -116,6 +120,8 @@ namespace MonadLib/Builder {
 
     pub def throwError(msg: String): Builder[r, ka, st, a] = 
         Builder((_, _) -> Err(msg) as & r)
+
+    pub def empty(): Builder[r, ka, st, a] = throwError("empty")
 
 
     pub def liftGetter(f: st -> a & ef): Builder[r, ka, st, a] & ef = 
