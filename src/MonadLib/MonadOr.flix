@@ -16,7 +16,7 @@
 
 namespace MonadLib {
 
-    class MonadOr[m: Type -> Type] with Monad[m] {
+    pub class MonadOr[m: Type -> Type] with Monad[m] {
 
         ///
         /// "Left catch" / left biased choice
