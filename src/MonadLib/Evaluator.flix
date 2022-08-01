@@ -122,6 +122,10 @@ namespace MonadLib/Evaluator {
             apply1WithHandler(ma, s, a -> k(a), _ -> Err(msg) as & r)
         )
 
+    pub def modifyError(f: String -> String & ef, ma: Evaluator[r, ka, st, a]): Evaluator[r, ka, st, a] & ef = 
+        Evaluator((s, k) -> 
+            apply1WithHandler(ma, s, a -> k(a), msg -> Err(f(msg)) as & r)
+        ) as & ef
 
     pub def empty(): Evaluator[r, ka, st, a] = throwError("empty")
 

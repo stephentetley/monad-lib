@@ -135,6 +135,11 @@ namespace MonadLib/Builder {
             apply1WithHandler(ma, s, a -> k(a), _ -> Err(msg) as & r)
         )
 
+    pub def modifyError(f: String -> String & ef, ma: Builder[r, ka, st, a]): Builder[r, ka, st, a] & ef = 
+        Builder((s, k) -> 
+            apply1WithHandler(ma, s, a -> k(a), msg -> Err(f(msg)) as & r)
+        ) as & ef
+
     pub def empty(): Builder[r, ka, st, a] = throwError("empty")
 
 
