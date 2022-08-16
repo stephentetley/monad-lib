@@ -13,21 +13,6 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-/*
- * Copyright 2022 Stephen Tetley
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- *   http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
- */
 
 
 namespace MonadLib {
@@ -40,23 +25,23 @@ namespace MonadLib {
     /// `ka` is the continuation answer type
     ///
     pub enum Builder[r: Region, ka: Type, st: Type, a: Type](
-        st -> (a -> Result[ka, String] & r) -> Result[ka, String] & r)
+        st -> (a -> Result[ka, String] \ r) -> Result[ka, String] \ r)
 
 
     instance Functor[Builder[r, ka, st]] {
-        pub def map(f: a -> b & ef, ma: Builder[r, ka, st, a]): Builder[r, ka, st, b] & ef = 
+        pub def map(f: a -> b \ ef, ma: Builder[r, ka, st, a]): Builder[r, ka, st, b] \ ef = 
             MonadLib/Builder.map(f, ma)
     }
 
 
     instance Applicative[Builder[r, ka, st]] {
         pub def point(x: a): Builder[r, ka, st, a] =  MonadLib/Builder.point(x)
-        pub def ap(mf: Builder[r, ka, st, a -> b & ef], ma: Builder[r, ka, st, a]): Builder[r, ka, st, b] & ef =
+        pub def ap(mf: Builder[r, ka, st, a -> b \ ef], ma: Builder[r, ka, st, a]): Builder[r, ka, st, b] \ ef =
             MonadLib/Builder.ap(mf, ma)
     }
 
     instance Monad[Builder[r, ka, st]] {
-        pub def flatMap(f: a -> Builder[r, ka, st, b] & ef, ma: Builder[r, ka, st, a]): Builder[r, ka, st, b] & ef =
+        pub def flatMap(f: a -> Builder[r, ka, st, b] \ ef, ma: Builder[r, ka, st, a]): Builder[r, ka, st, b] \ ef =
             MonadLib/Builder.flatMap(f, ma)
     }
 
@@ -80,14 +65,14 @@ namespace MonadLib/Builder {
     ///
     def apply1(ma: Builder[r, ka, st, a], 
                 s: st, 
-                k: a -> Result[ka, String] & r): Result[ka, String] & r =
+                k: a -> Result[ka, String] \ r): Result[ka, String] \ r =
         let Builder(ma1) = ma;
         ma1(s, k)
 
     def apply1WithHandler(ma: Builder[r, ka, st, a], 
                             s: st, 
-                            k: a -> Result[ka, String] & r, 
-                            handleK: String -> Result[ka, String] & r): Result[ka, String] & r =
+                            k: a -> Result[ka, String] \ r, 
+                            handleK: String -> Result[ka, String] \ r): Result[ka, String] \ r =
         let Builder(ma1) = ma;
         match ma1(s, k) {
             case Err(msg) => handleK(msg)
@@ -99,73 +84,90 @@ namespace MonadLib/Builder {
     ///
     pub def runBuilder(_: Region[r], 
                         ma: Builder[r, a, st, a], 
-                        s: st): Result[a, String] & r =
+                        s: st): Result[a, String] \ r =
         let Builder(f) = ma;
-        let cont = a -> Ok(a) as & r;
+        let cont = a -> Ok(a) as \ r;
         f(s, cont)
 
 
     pub def point(x: a): Builder[r, ka, st, a] = Builder((_, k) -> k(x))
 
-    pub def map(f: a -> b & ef, ma: Builder[r, ka, st, a]): Builder[r, ka, st, b] & ef =
+    pub def map(f: a -> b \ ef, ma: Builder[r, ka, st, a]): Builder[r, ka, st, b] \ ef =
         Builder((s, k) ->
-            apply1(ma, s, a -> k(f(a) as & r))
-        ) as & ef
+            apply1(ma, s, a -> k(f(a) as \ r))
+        ) as \ ef
 
-    pub def ap(mf: Builder[r, ka, st, a -> b & ef], ma: Builder[r, ka, st, a]): Builder[r, ka, st, b] & ef =
+    pub def ap(mf: Builder[r, ka, st, a -> b \ ef], ma: Builder[r, ka, st, a]): Builder[r, ka, st, b] \ ef =
         Builder((s, k) ->
             apply1(mf, s, f ->
                 apply1(ma, s, a ->
-                    k(f(a) as & r)))
-        ) as & ef
+                    k(f(a) as \ r)))
+        ) as \ ef
 
 
-    pub def flatMap(f: a -> Builder[r, ka, st, b] & ef, ma: Builder[r, ka, st, a]): Builder[r, ka, st, b] & ef =
+    pub def flatMap(f: a -> Builder[r, ka, st, b] \ ef, ma: Builder[r, ka, st, a]): Builder[r, ka, st, b] \ ef =
         Builder((s, k) ->
             apply1(ma, s, a ->
-                apply1(f(a) as & r, s, b ->
+                apply1(f(a) as \ r, s, b ->
                     k(b)))
-        ) as & ef
+        ) as \ ef
 
     pub def throwError(msg: String): Builder[r, ka, st, a] = 
-        Builder((_, _) -> Err(msg) as & r)
+        Builder((_, _) -> Err(msg) as \ r)
 
     pub def swapError(msg: String, ma: Builder[r, ka, st, a]): Builder[r, ka, st, a] = 
         Builder((s, k) -> 
-            apply1WithHandler(ma, s, a -> k(a), _ -> Err(msg) as & r)
+            apply1WithHandler(ma, s, a -> k(a), _ -> Err(msg) as \ r)
         )
 
-    pub def modifyError(f: String -> String & ef, ma: Builder[r, ka, st, a]): Builder[r, ka, st, a] & ef = 
+    pub def modifyError(f: String -> String \ ef, ma: Builder[r, ka, st, a]): Builder[r, ka, st, a] \ ef = 
         Builder((s, k) -> 
-            apply1WithHandler(ma, s, a -> k(a), msg -> Err(f(msg)) as & r)
-        ) as & ef
+            apply1WithHandler(ma, s, a -> k(a), msg -> Err(f(msg)) as \ r)
+        ) as \ ef
 
     pub def empty(): Builder[r, ka, st, a] = throwError("empty")
 
 
-    pub def liftGetter(f: st -> a & ef): Builder[r, ka, st, a] & ef = 
+    pub def liftGetter(f: st -> a \ ef): Builder[r, ka, st, a] \ ef = 
         Builder((s, k) ->
             try {
-                let ans = f(s) as & r;
+                let ans = f(s) as \ r;
                 k(ans)
             } catch {
                 case ex: ##java.lang.Exception => 
-                    import java.lang.Throwable.getMessage(): String & r;
+                    import java.lang.Throwable.getMessage(): String \ r;
                     Err(getMessage(ex))
             }            
-        ) as & ef
+        ) as \ ef
 
-    pub def liftSetter(f: st -> st & ef): Builder[r, ka, st, Unit] & ef = 
+    // f should not throw an exception
+    pub def liftGetterResult(f: st -> Result[a, err] \ ef): Builder[r, ka, st, a] \ ef with ToString[err] = 
+        Builder((s, k) ->
+            match f(s) { 
+                case Ok(a)  => k(a)
+                case Err(e) => Err(ToString.toString(e))
+            } as \ r
+        ) as \ ef
+
+    pub def liftSetter(f: st -> st \ ef): Builder[r, ka, st, Unit] \ ef = 
         Builder((s, k) ->
             try {
-                { discard f(s); k()} as & r
+                { discard f(s); k()} as \ r
             } catch {
                 case ex: ##java.lang.Exception => 
-                    import java.lang.Throwable.getMessage(): String & r;
+                    import java.lang.Throwable.getMessage(): String \ r;
                     Err(getMessage(ex))
             }            
-        ) as & ef
+        ) as \ ef
 
+    // f should not throw an exception
+    pub def liftSetterResult(f: st -> Result[st, err] \ ef): Builder[r, ka, st, Unit] \ ef with ToString[err] = 
+        Builder((s, k) ->
+            match f(s) {
+                case Ok(_)  => k()
+                case Err(e) => Err(ToString.toString(e))
+            } as \ r
+        ) as \ ef
 
 
 }

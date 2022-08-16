@@ -40,7 +40,7 @@ namespace MonadLib/MonadExtra {
         mx >>= x -> whenFalse(x, ma)
 
 
-    pub def whenSome(x: Option[a], f: a -> m[Unit] & ef):  m[Unit] & ef with Monad[m] = 
+    pub def whenSome(x: Option[a], f: a -> m[Unit] \ ef):  m[Unit] \ ef with Monad[m] = 
         match x { 
             case Some(a) => f(a)
             case None => point()
@@ -52,7 +52,7 @@ namespace MonadLib/MonadExtra {
             case None => ma
         }
 
-    pub def whenSomeM(mx:  m[Option[a]], f: a ->  m[Unit] & ef):  m[Unit] & ef with Monad[m] = 
+    pub def whenSomeM(mx:  m[Option[a]], f: a ->  m[Unit] \ ef):  m[Unit] \ ef with Monad[m] = 
         mx >>= x -> whenSome(x, f)
             
 
@@ -60,7 +60,7 @@ namespace MonadLib/MonadExtra {
         mx >>= x -> whenNone(x, ma)
 
 
-    pub def ifSomeM(mx: m[Option[a]], mthen: a -> m[b] & ef, melse: m[b]): m[b] & ef with Monad[m] = 
+    pub def ifSomeM(mx: m[Option[a]], mthen: a -> m[b] \ ef, melse: m[b]): m[b] \ ef with Monad[m] = 
         mx >>= x -> match x { 
             case Some(a) => mthen(a)
             case None    => melse
