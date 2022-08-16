@@ -150,9 +150,17 @@ namespace MonadLib/Builder {
         ) as \ ef
 
     pub def liftSetter(f: st -> st \ ef): Builder[r, ka, st, Unit] \ ef = 
+        liftSetterUnit(s -> discard f(s))
+        
+    // f should not throw an exception
+    pub def liftSetterResult(f: st -> Result[st, err] \ ef): Builder[r, ka, st, Unit] \ ef with ToString[err] = 
+        liftSetterResultUnit(s -> f(s) |> Result.map(_ -> ()))
+
+    pub def liftSetterUnit(f: st -> Unit \ ef): Builder[r, ka, st, Unit] \ ef = 
         Builder((s, k) ->
             try {
-                { discard f(s); k()} as \ r
+                f(s) as \ r; 
+                k()
             } catch {
                 case ex: ##java.lang.Exception => 
                     import java.lang.Throwable.getMessage(): String \ r;
@@ -161,13 +169,12 @@ namespace MonadLib/Builder {
         ) as \ ef
 
     // f should not throw an exception
-    pub def liftSetterResult(f: st -> Result[st, err] \ ef): Builder[r, ka, st, Unit] \ ef with ToString[err] = 
+    pub def liftSetterResultUnit(f: st -> Result[Unit, err] \ ef): Builder[r, ka, st, Unit] \ ef with ToString[err] = 
         Builder((s, k) ->
             match f(s) {
-                case Ok(_)  => k()
+                case Ok()  => k()
                 case Err(e) => Err(ToString.toString(e))
             } as \ r
         ) as \ ef
-
 
 }
