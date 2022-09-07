@@ -16,7 +16,19 @@
 
 namespace MonadLib {
 
-
+    ///
+    /// State is expected to be unchanged for the extent of an evaluation, 
+    /// but it may be mutated outside the Evaluator monad. A `ResultSet` in 
+    /// the JDBC library is a typical example. This has operations on the current
+    /// row (`getString`, `getTime`, etc.) but also cursor level operations 
+    /// to change to another row. An Evaluator for a ResultSet would only provide 
+    /// the row operations and be expexcted to run for every row in a traversal
+    /// of the results.
+    ///
+    /// The Evaluation monad is in the codensity style to be stack safe.
+    /// 
+    /// `ka` is the continuation answer type
+    ///
     pub enum Evaluator[r: Region, ka: Type, st: Type, a: Type](
         st -> (a -> Result[ka, String] \ r) -> Result[ka, String] \ r)
 

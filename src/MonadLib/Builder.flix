@@ -17,6 +17,7 @@
 
 namespace MonadLib {
 
+    /// DEPRECATED - use MutStateError
 
     ///
     /// Mutable State which is equivalent to Reader (without local), and Error 
@@ -49,7 +50,7 @@ namespace MonadLib {
         pub def empty(): Builder[r, ka, st, a] = MonadLib/Builder.empty()
     }
 
-    /// No Orelse for Builder because it is expected to be updating the state
+    /// No `MonadOr` for Builder because it is expected to be updating the state
 
 }
 
