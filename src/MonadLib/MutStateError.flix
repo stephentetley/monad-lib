@@ -166,5 +166,18 @@ namespace MonadLib/MutStateError {
             } as \ r
         ) as \ ef
 
+    pub def liftAction(f: Unit -> a \ ef): MutStateError[r, ka, st, a] \ ef = 
+        MutStateError((_, k) ->
+            let a = f() as \ r; 
+            k(a)  
+        ) as \ ef
+
+    pub def liftActionResult(f: Unit -> Result[a, err] \ ef): MutStateError[r, ka, st, a] \ ef with ToString[err] = 
+        MutStateError((_, k) ->
+            match f() {
+                case Ok(a)  => k(a)
+                case Err(e) => Err(ToString.toString(e))
+            } as \ r
+        ) as \ ef
 
 }

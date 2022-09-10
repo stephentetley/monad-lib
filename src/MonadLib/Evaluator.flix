@@ -163,6 +163,13 @@ namespace MonadLib/Evaluator {
             } as \ r
         ) as \ ef
 
+
+    pub def liftAction(f: Unit -> a \ ef): Evaluator[r, ka, st, a] \ ef = 
+        Evaluator((_, k) ->
+            let a =  f() as \ r;
+            k(a)
+        ) as \ ef
+
     pub def liftActionResult(f: Unit -> Result[a, String] \ ef): Evaluator[r, ka, st, a] \ ef = 
         Evaluator((_, k) ->
             match {f() as \ r} {
