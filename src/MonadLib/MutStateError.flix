@@ -53,8 +53,8 @@ namespace MonadLib {
         pub def throwError(msg: String): MutStateError[r, ka, st, a] =
             MonadLib/MutStateError.throwError(msg)
 
-        pub def modifyError(f: String -> String \ ef, ma: MutStateError[r, ka, st, a]): MutStateError[r, ka, st, a] \ ef = 
-            MonadLib/MutStateError.modifyError(f, ma)
+        pub def mapError(f: String -> String \ ef, ma: MutStateError[r, ka, st, a]): MutStateError[r, ka, st, a] \ ef = 
+            MonadLib/MutStateError.mapError(f, ma)
 
         pub def catchError(ma: MutStateError[r, ka, st, a], hdlr: String -> MutStateError[r, ka, st, a] \ ef): MutStateError[r, ka, st, a] \ ef = 
             MonadLib/MutStateError.catchError(ma, hdlr)
@@ -134,9 +134,7 @@ namespace MonadLib/MutStateError {
                 } as \ r
         ) as \ ef
 
-
-
-    pub def modifyError(f: String -> String \ ef, ma: MutStateError[r, ka, st, a]): MutStateError[r, ka, st, a] \ ef = 
+    pub def mapError(f: String -> String \ ef, ma: MutStateError[r, ka, st, a]): MutStateError[r, ka, st, a] \ ef = 
         MutStateError((s, k) -> 
             apply1WithHandler(ma, s, a -> k(a), msg -> Err(f(msg)) as \ r)
         ) as \ ef

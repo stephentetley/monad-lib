@@ -65,8 +65,8 @@ namespace MonadLib {
         pub def throwError(msg: String): Evaluator[r, ka, st, a] =
             MonadLib/Evaluator.throwError(msg)
 
-        pub def modifyError(f: String -> String \ ef, ma: Evaluator[r, ka, st, a]): Evaluator[r, ka, st, a] \ ef = 
-            MonadLib/Evaluator.modifyError(f, ma)
+        pub def mapError(f: String -> String \ ef, ma: Evaluator[r, ka, st, a]): Evaluator[r, ka, st, a] \ ef = 
+            MonadLib/Evaluator.mapError(f, ma)
 
         pub def catchError(ma: Evaluator[r, ka, st, a], hdlr: String -> Evaluator[r, ka, st, a] \ ef): Evaluator[r, ka, st, a] \ ef = 
             MonadLib/Evaluator.catchError(ma, hdlr)
@@ -152,7 +152,7 @@ namespace MonadLib/Evaluator {
 
 
 
-    pub def modifyError(f: String -> String \ ef, ma: Evaluator[r, ka, st, a]): Evaluator[r, ka, st, a] \ ef = 
+    pub def mapError(f: String -> String \ ef, ma: Evaluator[r, ka, st, a]): Evaluator[r, ka, st, a] \ ef = 
         Evaluator((s, k) -> 
             apply1WithHandler(ma, s, a -> k(a), msg -> Err(f(msg)) as \ r)
         ) as \ ef

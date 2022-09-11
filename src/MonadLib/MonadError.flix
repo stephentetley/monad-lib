@@ -27,7 +27,7 @@ namespace MonadLib {
     pub class MonadError[m: Type -> Type] with Monad[m] {
         pub def throwError(e: String): m[a]
 
-        pub def modifyError(f: String -> String \ ef, m: m[a]): m[a] \ef
+        pub def mapError(f: String -> String \ ef, m: m[a]): m[a] \ef
 
         pub def catchError(m: m[a], hdl: String -> m[a] \ ef): m[a] \ ef
     }
@@ -40,7 +40,7 @@ namespace MonadLib/MonadError {
     use MonadLib.MonadError;
 
     pub def swapError(msg: String, ma: m[a]): m[a] with MonadError[m] = 
-        MonadLib/MonadError.modifyError(_ -> msg, ma)
+        MonadLib/MonadError.mapError(_ -> msg, ma)
 
     pub def liftOption(e: err, x: Option[a]): m[a] with MonadError[m], ToString[err] = match x { 
         case Some(x1) => point(x1)
