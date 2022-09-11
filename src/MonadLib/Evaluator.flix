@@ -61,6 +61,17 @@ namespace MonadLib {
             MonadLib/Evaluator.orelse(ma, mb)
     }
 
+    instance MonadLib.MonadError[Evaluator[r, ka, st]] { 
+        pub def throwError(msg: String): Evaluator[r, ka, st, a] =
+            MonadLib/Evaluator.throwError(msg)
+
+        pub def modifyError(f: String -> String \ ef, ma: Evaluator[r, ka, st, a]): Evaluator[r, ka, st, a] \ ef = 
+            MonadLib/Evaluator.modifyError(f, ma)
+
+        pub def catchError(ma: Evaluator[r, ka, st, a], hdlr: String -> Evaluator[r, ka, st, a] \ ef): Evaluator[r, ka, st, a] \ ef = 
+            MonadLib/Evaluator.catchError(ma, hdlr)
+    }  
+
 }
 
 namespace MonadLib/Evaluator {
@@ -129,10 +140,17 @@ namespace MonadLib/Evaluator {
     pub def throwError(msg: String): Evaluator[r, ka, st, a] = 
         Evaluator((_, _) -> Err(msg) as \ r)
 
-    pub def swapError(msg: String, ma: Evaluator[r, ka, st, a]): Evaluator[r, ka, st, a] = 
+    pub def catchError(ma: Evaluator[r, ka, st, a], 
+                        hdlr: String -> Evaluator[r, ka, st, a] \ ef): Evaluator[r, ka, st, a] \ ef= 
         Evaluator((s, k) -> 
-            apply1WithHandler(ma, s, a -> k(a), _ -> Err(msg) as \ r)
-        )
+            let Evaluator(ma1) = ma;
+                match ma1(s, k) {
+                    case Ok(a)    => Ok(a)
+                    case Err(msg) => let Evaluator(hdlr1) = hdlr(msg); hdlr1(s, k)
+                } as \ r
+        ) as \ ef
+
+
 
     pub def modifyError(f: String -> String \ ef, ma: Evaluator[r, ka, st, a]): Evaluator[r, ka, st, a] \ ef = 
         Evaluator((s, k) -> 
@@ -170,11 +188,11 @@ namespace MonadLib/Evaluator {
             k(a)
         ) as \ ef
 
-    pub def liftActionResult(f: Unit -> Result[a, String] \ ef): Evaluator[r, ka, st, a] \ ef = 
+    pub def liftActionResult(f: Unit -> Result[a, err] \ ef): Evaluator[r, ka, st, a] \ ef with ToString[err] = 
         Evaluator((_, k) ->
             match {f() as \ r} {
-                case Err(msg) => Err(msg)
-                case Ok(a)    => k(a)
+                case Ok(a)  => k(a)
+                case Err(e) => Err(ToString.toString(e))
             }
         ) as \ ef
 
