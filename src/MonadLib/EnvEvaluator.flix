@@ -201,5 +201,17 @@ namespace MonadLib/EnvEvaluator {
             }
         ) as \ ef
 
+    pub def askEnv(): EnvEvaluator[r, ka, env, st, env]  = 
+        EnvEvaluator((e, _, k) -> k(e))
+
+    pub def asksEnv(f: env -> a): EnvEvaluator[r, ka, env, st, a]  = 
+        EnvEvaluator((e, _, k) -> k(f(e)))
+
+    pub def localEnv(f: env -> env \ ef, ma: EnvEvaluator[r, ka, env, st, a]): EnvEvaluator[r, ka, env, st, a] \ ef = 
+        EnvEvaluator((e, s, k) -> 
+            apply1(ma, f(e) as \ r, s, a1 -> 
+                k(a1))
+        ) as \ ef
+
 }
 

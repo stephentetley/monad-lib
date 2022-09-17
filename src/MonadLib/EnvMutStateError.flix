@@ -93,10 +93,10 @@ namespace MonadLib/EnvMutStateError {
     ///
     /// Returns the result of applying `ma` to the state `s`.
     ///
-    pub def runMutStateError(_: Region[r], 
-                        ma: EnvMutStateError[r, a, env, st, a],
-                        e: env,
-                        s: st): Result[a, String] \ r =
+    pub def runEnvMutStateError(_: Region[r], 
+                                ma: EnvMutStateError[r, a, env, st, a],
+                                e: env,
+                                s: st): Result[a, String] \ r =
         let EnvMutStateError(f) = ma;
         let cont = a -> Ok(a) as \ r;
         f(e, s, cont)
@@ -200,4 +200,16 @@ namespace MonadLib/EnvMutStateError {
             } as \ r
         ) as \ ef
 
+
+    pub def askEnv(): EnvMutStateError[r, ka, env, st, env]  = 
+        EnvMutStateError((e, _, k) -> k(e))
+
+    pub def asksEnv(f: env -> a): EnvMutStateError[r, ka, env, st, a]  = 
+        EnvMutStateError((e, _, k) -> k(f(e)))
+
+    pub def localEnv(f: env -> env \ ef, ma: EnvMutStateError[r, ka, env, st, a]): EnvMutStateError[r, ka, env, st, a] \ ef = 
+        EnvMutStateError((e, s, k) -> 
+            apply1(ma, f(e) as \ r, s, a1 -> 
+                k(a1))
+        ) as \ ef
 }
