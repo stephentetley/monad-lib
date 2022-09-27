@@ -175,10 +175,10 @@ namespace MonadLib/Evaluator {
     // f should not throw an exception
     pub def liftGetterResult(f: st -> Result[a, err] \ ef): Evaluator[r, ka, st, a] \ ef with ToString[err] = 
         Evaluator((s, k) ->
-            match f(s) { 
+            match (f(s) as \ r) { 
                 case Ok(a)  => k(a)
                 case Err(e) => Err(ToString.toString(e))
-            } as \ r
+            } 
         ) as \ ef
 
 
@@ -190,7 +190,7 @@ namespace MonadLib/Evaluator {
 
     pub def liftActionResult(f: Unit -> Result[a, err] \ ef): Evaluator[r, ka, st, a] \ ef with ToString[err] = 
         Evaluator((_, k) ->
-            match {f() as \ r} {
+            match (f() as \ r) {
                 case Ok(a)  => k(a)
                 case Err(e) => Err(ToString.toString(e))
             }

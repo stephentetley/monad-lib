@@ -153,16 +153,16 @@ namespace MonadLib/EnvMutStateError {
                 case ex: ##java.lang.Exception => 
                     import java.lang.Throwable.getMessage(): String \ r;
                     Err(getMessage(ex))
-            }            
+            }
         ) as \ ef
 
     // f should not throw an exception
     pub def liftGetterResult(f: env -> st -> Result[a, err] \ ef): EnvMutStateError[r, ka, env, st, a] \ ef with ToString[err] = 
         EnvMutStateError((e, s, k) ->
-            match f(e, s) { 
+            match (f(e, s) as \ r) { 
                 case Ok(a)    => k(a)
                 case Err(err) => Err(ToString.toString(err))
-            } as \ r
+            } 
         ) as \ ef
 
     pub def liftSetter!(f: env -> st -> a \ ef): EnvMutStateError[r, ka, env, st, a] \ ef = 
@@ -180,10 +180,10 @@ namespace MonadLib/EnvMutStateError {
     // f should not throw an exception
     pub def liftSetterResult!(f: env -> st -> Result[a, err] \ ef): EnvMutStateError[r, ka, env, st, a] \ ef with ToString[err] = 
         EnvMutStateError((e, s, k) ->
-            match f(e, s) {
+            match (f(e, s) as \ r) {
                 case Ok(a)    => k(a)
                 case Err(err) => Err(ToString.toString(err))
-            } as \ r
+            } 
         ) as \ ef
 
     pub def liftAction(f: Unit -> a \ ef): EnvMutStateError[r, ka, env, st, a] \ ef = 
@@ -194,10 +194,10 @@ namespace MonadLib/EnvMutStateError {
 
     pub def liftActionResult(f: Unit -> Result[a, err] \ ef): EnvMutStateError[r, ka, env, st, a] \ ef with ToString[err] = 
         EnvMutStateError((_, _, k) ->
-            match f() {
+            match (f() as \ r) {
                 case Ok(a)    => k(a)
                 case Err(err) => Err(ToString.toString(err))
-            } as \ r
+            } 
         ) as \ ef
 
 

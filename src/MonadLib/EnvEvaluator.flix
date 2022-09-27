@@ -180,10 +180,10 @@ namespace MonadLib/EnvEvaluator {
     // f should not throw an exception
     pub def liftGetterResult(f: env -> st -> Result[a, err] \ ef): EnvEvaluator[r, ka, env, st, a] \ ef with ToString[err] = 
         EnvEvaluator((e, s, k) ->
-            match f(e, s) { 
+            match (f(e, s) as \ r) { 
                 case Ok(a)    => k(a)
                 case Err(err) => Err(ToString.toString(err))
-            } as \ r
+            } 
         ) as \ ef
 
 
@@ -195,7 +195,7 @@ namespace MonadLib/EnvEvaluator {
 
     pub def liftActionResult(f: Unit -> Result[a, err] \ ef): EnvEvaluator[r, ka, env, st, a] \ ef with ToString[err] = 
         EnvEvaluator((_, _, k) ->
-            match {f() as \ r} {
+            match (f() as \ r) {
                 case Ok(a)    => k(a)
                 case Err(err) => Err(ToString.toString(err))
             }
