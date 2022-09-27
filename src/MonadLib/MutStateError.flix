@@ -155,10 +155,10 @@ namespace MonadLib/MutStateError {
     // f should not throw an exception
     pub def liftGetterResult(f: st -> Result[a, err] \ ef): MutStateError[r, ka, st, a] \ ef with ToString[err] = 
         MutStateError((s, k) ->
-            match f(s) { 
+            match (f(s) as \ r) { 
                 case Ok(a)  => k(a)
                 case Err(e) => Err(ToString.toString(e))
-            } as \ r
+            } 
         ) as \ ef
 
     pub def liftSetter!(f: st -> a \ ef): MutStateError[r, ka, st, a] \ ef = 
@@ -176,10 +176,10 @@ namespace MonadLib/MutStateError {
     // f should not throw an exception
     pub def liftSetterResult!(f: st -> Result[a, err] \ ef): MutStateError[r, ka, st, a] \ ef with ToString[err] = 
         MutStateError((s, k) ->
-            match f(s) {
+            match (f(s) as \ r) {
                 case Ok(a)  => k(a)
                 case Err(e) => Err(ToString.toString(e))
-            } as \ r
+            }
         ) as \ ef
 
     pub def liftAction(f: Unit -> a \ ef): MutStateError[r, ka, st, a] \ ef = 
@@ -190,10 +190,10 @@ namespace MonadLib/MutStateError {
 
     pub def liftActionResult(f: Unit -> Result[a, err] \ ef): MutStateError[r, ka, st, a] \ ef with ToString[err] = 
         MutStateError((_, k) ->
-            match f() {
+            match (f() as \ r) {
                 case Ok(a)  => k(a)
                 case Err(e) => Err(ToString.toString(e))
-            } as \ r
+            } 
         ) as \ ef
 
 }
