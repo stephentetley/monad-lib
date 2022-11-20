@@ -207,7 +207,7 @@ namespace MonadLib/EnvMutStateError {
     pub def asksEnv(f: env -> a): EnvMutStateError[r, ka, env, st, a]  = 
         EnvMutStateError((e, _, k) -> k(f(e)))
 
-    pub def localEnv(f: env -> env \ ef, ma: EnvMutStateError[r, ka, env, st, a]): EnvMutStateError[r, ka, env, st, a] \ ef = 
+    pub def localEnv(f: env -> env1 \ ef, ma: EnvMutStateError[r, ka, env1, st, a]): EnvMutStateError[r, ka, env, st, a] \ ef = 
         EnvMutStateError((e, s, k) -> 
             apply1(ma, f(e) as \ r, s, a1 -> 
                 k(a1))
