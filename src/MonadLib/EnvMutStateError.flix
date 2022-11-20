@@ -19,7 +19,7 @@ namespace MonadLib {
 
 
     ///
-    /// Mutable State which is equivalent to Reader (without local), and Error 
+    /// Mutable State (no local), Env/Reader (with local), and Error 
     /// monad in codensity style to be stack safe.
     /// 
     /// `ka` is the continuation answer type
