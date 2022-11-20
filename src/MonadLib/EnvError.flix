@@ -46,7 +46,17 @@ namespace MonadLib {
             MonadLib/EnvError.flatMap(f, ma)
     }
 
-    /// No `MonadOr` for EnvError because updated state cannot be unwound.
+    instance MonadZero[EnvError[r, ka, env]] { 
+        pub def empty(): EnvError[r, ka, env, a] = 
+            MonadLib/EnvError.empty()
+    }
+
+    // Orelse available for Evaluator because it is expected to only be reading the state
+
+    instance MonadLib.MonadOr[EnvError[r, ka, env]] { 
+        pub def orelse(ma: EnvError[r, ka, env, a], mb: EnvError[r, ka, env, a]): EnvError[r, ka, env, a] =
+            MonadLib/EnvError.orelse(ma, mb)
+    }
     
     instance MonadLib.MonadError[EnvError[r, ka, env]] { 
         pub def throwError(msg: String): EnvError[r, ka, env, a] =
@@ -90,9 +100,7 @@ namespace MonadLib/EnvError {
     ///
     /// Returns the result of applying `ma` to the state `s`.
     ///
-    pub def runEnvMutStateError(_: Region[r], 
-                                ma: EnvError[r, a, env, a],
-                                e: env): Result[a, String] \ r =
+    pub def runEnvError(_: Region[r], ma: EnvError[r, a, env, a], e: env): Result[a, String] \ r =
         let EnvError(f) = ma;
         let cont = a -> Ok(a) as \ r;
         f(e, cont)
@@ -139,6 +147,13 @@ namespace MonadLib/EnvError {
             apply1WithHandler(ma, e, a -> k(a), msg -> Err(f(msg)) as \ r)
         ) as \ ef
 
+    pub def empty(): EnvError[r, ka, env, a] = throwError("empty")
+
+    pub def orelse(ma: EnvError[r, ka, env, a], mb: EnvError[r, ka, env, a]): EnvError[r, ka, env, a] =
+        EnvError((e, k) ->
+            apply1WithHandler(ma, e, a -> k(a), _ -> apply1(mb, e, b -> k(b)))
+        )
+
 
     pub def liftGetter(f: env -> a \ ef): EnvError[r, ka, env, a] \ ef = 
         EnvError((e, k) ->
@@ -177,10 +192,10 @@ namespace MonadLib/EnvError {
         ) as \ ef
 
 
-    pub def askEnv(): EnvError[r, ka, env, env]  = 
+    pub def askEnv(): EnvError[r, ka, env, env] = 
         EnvError((e, k) -> k(e))
 
-    pub def asksEnv(f: env -> a): EnvError[r, ka, env, a]  = 
+    pub def asksEnv(f: env -> a): EnvError[r, ka, env, a] = 
         EnvError((e, k) -> k(f(e)))
 
     pub def localEnv(f: env -> env1 \ ef, ma: EnvError[r, ka, env1, a]): EnvError[r, ka, env, a] \ ef = 
@@ -188,4 +203,5 @@ namespace MonadLib/EnvError {
             apply1(ma, f(e) as \ r, a1 -> 
                 k(a1))
         ) as \ ef
+
 }

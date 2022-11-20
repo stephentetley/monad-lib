@@ -137,11 +137,6 @@ namespace MonadLib/EnvEvaluator {
                     k(b)))
         ) as \ ef
 
-    pub def orelse(ma: EnvEvaluator[r, ka, env, st, a], mb: EnvEvaluator[r, ka, env, st, a]): EnvEvaluator[r, ka, env, st, a] =
-        EnvEvaluator((e, s, k) ->
-            apply1WithHandler(ma, e, s, a -> k(a), _ -> apply1(mb, e, s, b -> k(b)))
-        )
-
     pub def throwError(msg: String): EnvEvaluator[r, ka, env, st, a] = 
         EnvEvaluator((_, _, _) -> Err(msg) as \ r)
 
@@ -164,6 +159,10 @@ namespace MonadLib/EnvEvaluator {
 
     pub def empty(): EnvEvaluator[r, ka, env, st, a] = throwError("empty")
 
+    pub def orelse(ma: EnvEvaluator[r, ka, env, st, a], mb: EnvEvaluator[r, ka, env, st, a]): EnvEvaluator[r, ka, env, st, a] =
+        EnvEvaluator((e, s, k) ->
+            apply1WithHandler(ma, e, s, a -> k(a), _ -> apply1(mb, e, s, b -> k(b)))
+        )
 
     pub def liftGetter(f: env -> st -> a \ ef): EnvEvaluator[r, ka, env, st, a] \ ef = 
         EnvEvaluator((e, s, k) ->
