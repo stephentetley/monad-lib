@@ -107,30 +107,30 @@ namespace MonadLib/Evaluator {
                         ma: Evaluator[r, a, st, a], 
                         s: st): Result[a, String] \ r =
         let Evaluator(f) = ma;
-        let cont = a -> Ok(a) as \ r;
+        let cont = a -> unsafe_cast Ok(a) as \ r;
         f(s, cont)
 
     pub def point(x: a): Evaluator[r, ka, st, a] = Evaluator((_, k) -> k(x))
 
     pub def map(f: a -> b \ ef, ma: Evaluator[r, ka, st, a]): Evaluator[r, ka, st, b] \ ef =
-        Evaluator((s, k) ->
-            apply1(ma, s, a -> k(f(a) as \ r))
-        ) as \ ef
+        unsafe_cast (Evaluator((s, k) ->
+            apply1(ma, s, a -> k(unsafe_cast f(a) as \ r))
+        )) as \ ef
 
     pub def ap(mf: Evaluator[r, ka, st, a -> b \ ef], ma: Evaluator[r, ka, st, a]): Evaluator[r, ka, st, b] \ ef =
-        Evaluator((s, k) ->
+        unsafe_cast (Evaluator((s, k) ->
             apply1(mf, s, f ->
                 apply1(ma, s, a ->
-                    k(f(a) as \ r)))
-        ) as \ ef
+                    k(unsafe_cast f(a) as \ r)))
+        )) as \ ef
 
 
     pub def flatMap(f: a -> Evaluator[r, ka, st, b] \ ef, ma: Evaluator[r, ka, st, a]): Evaluator[r, ka, st, b] \ ef =
-        Evaluator((s, k) ->
+        unsafe_cast (Evaluator((s, k) ->
             apply1(ma, s, a ->
-                apply1(f(a) as \ r, s, b ->
+                apply1(unsafe_cast f(a) as \ r, s, b ->
                     k(b)))
-        ) as \ ef
+        )) as \ ef
 
     pub def orelse(ma: Evaluator[r, ka, st, a], mb: Evaluator[r, ka, st, a]): Evaluator[r, ka, st, a] =
         Evaluator((s, k) ->
@@ -138,63 +138,63 @@ namespace MonadLib/Evaluator {
         )
 
     pub def throwError(msg: String): Evaluator[r, ka, st, a] = 
-        Evaluator((_, _) -> Err(msg) as \ r)
+        Evaluator((_, _) -> unsafe_cast Err(msg) as \ r)
 
     pub def catchError(ma: Evaluator[r, ka, st, a], 
                         hdlr: String -> Evaluator[r, ka, st, a] \ ef): Evaluator[r, ka, st, a] \ ef= 
-        Evaluator((s, k) -> 
+        unsafe_cast (Evaluator((s, k) -> 
             let Evaluator(ma1) = ma;
-                match ma1(s, k) {
+                unsafe_cast (match ma1(s, k) {
                     case Ok(a)    => Ok(a)
                     case Err(msg) => let Evaluator(hdlr1) = hdlr(msg); hdlr1(s, k)
-                } as \ r
-        ) as \ ef
+                }) as \ r
+        )) as \ ef
 
 
 
     pub def mapError(f: String -> String \ ef, ma: Evaluator[r, ka, st, a]): Evaluator[r, ka, st, a] \ ef = 
-        Evaluator((s, k) -> 
-            apply1WithHandler(ma, s, a -> k(a), msg -> Err(f(msg)) as \ r)
-        ) as \ ef
+        unsafe_cast (Evaluator((s, k) -> 
+            apply1WithHandler(ma, s, a -> k(a), msg -> unsafe_cast Err(f(msg)) as \ r)
+        )) as \ ef
 
     pub def empty(): Evaluator[r, ka, st, a] = throwError("empty")
 
 
     pub def liftGetter(f: st -> a \ ef): Evaluator[r, ka, st, a] \ ef = 
-        Evaluator((s, k) ->
+        unsafe_cast (Evaluator((s, k) ->
             try {
-                let ans = f(s) as \ r;
+                let ans = unsafe_cast f(s) as \ r;
                 k(ans)
             } catch {
                 case ex: ##java.lang.Exception => 
                     import java.lang.Throwable.getMessage(): String \ r;
                     Err(getMessage(ex))
             }            
-        ) as \ ef
+        )) as \ ef
 
     // f should not throw an exception
     pub def liftGetterResult(f: st -> Result[a, err] \ ef): Evaluator[r, ka, st, a] \ ef with ToString[err] = 
-        Evaluator((s, k) ->
-            match (f(s) as \ r) { 
+        unsafe_cast (Evaluator((s, k) ->
+            match (unsafe_cast f(s) as \ r) { 
                 case Ok(a)  => k(a)
                 case Err(e) => Err(ToString.toString(e))
             } 
-        ) as \ ef
+        )) as \ ef
 
 
     pub def liftAction(f: Unit -> a \ ef): Evaluator[r, ka, st, a] \ ef = 
-        Evaluator((_, k) ->
-            let a =  f() as \ r;
+        unsafe_cast (Evaluator((_, k) ->
+            let a = unsafe_cast f() as \ r;
             k(a)
-        ) as \ ef
+        )) as \ ef
 
     pub def liftActionResult(f: Unit -> Result[a, err] \ ef): Evaluator[r, ka, st, a] \ ef with ToString[err] = 
-        Evaluator((_, k) ->
-            match (f() as \ r) {
+        unsafe_cast (Evaluator((_, k) ->
+            match (unsafe_cast f() as \ r) {
                 case Ok(a)  => k(a)
                 case Err(e) => Err(ToString.toString(e))
             }
-        ) as \ ef
+        )) as \ ef
 
 }
 
