@@ -100,7 +100,7 @@ namespace MonadLib/StateError {
                         ma: StateError[r, (st, a), st, a], 
                         s: st): Result[(st, a), String] \ r =
         let StateError(f) = ma;
-        let cont = (a, s1) -> unsafe_cast Ok((s1, a)) as \ r;
+        let cont = (a, s1) -> unsafe_cast Ok((s1, a)) as _ \ r;
         f(s, cont)
 
 
@@ -108,23 +108,23 @@ namespace MonadLib/StateError {
 
     pub def map(f: a -> b \ ef, ma: StateError[r, ka, st, a]): StateError[r, ka, st, b] \ ef =
         unsafe_cast (StateError((s, k) ->
-            apply1(ma, s, (a, s1) -> k(unsafe_cast f(a) as \ r, s1))
-        )) as \ ef
+            apply1(ma, s, (a, s1) -> k(unsafe_cast f(a) as _ \ r, s1))
+        )) as _ \ ef
 
     pub def ap(mf: StateError[r, ka, st, a -> b \ ef], ma: StateError[r, ka, st, a]): StateError[r, ka, st, b] \ ef =
         unsafe_cast (StateError((s, k) ->
             apply1(mf, s, (f, s1) ->
                 apply1(ma, s1, (a, s2) ->
-                    k(unsafe_cast f(a) as \ r, s2)))
-        )) as \ ef
+                    k(unsafe_cast f(a) as _ \ r, s2)))
+        )) as _ \ ef
 
 
     pub def flatMap(f: a -> StateError[r, ka, st, b] \ ef, ma: StateError[r, ka, st, a]): StateError[r, ka, st, b] \ ef =
         unsafe_cast (StateError((s, k) ->
             apply1(ma, s, (a, s1) ->
-                apply1(unsafe_cast f(a) as \ r, s1, (b, s2) ->
+                apply1(unsafe_cast f(a) as _ \ r, s1, (b, s2) ->
                     k(b, s2)))
-        )) as \ ef
+        )) as _ \ ef
 
 
     pub def orelse(ma: StateError[r, ka, st, a], mb: StateError[r, ka, st, a]): StateError[r, ka, st, a] =
@@ -133,7 +133,7 @@ namespace MonadLib/StateError {
         )
 
     pub def throwError(msg: String): StateError[r, ka, st, a] = 
-        StateError((_, _) -> unsafe_cast Err(msg) as \ r)
+        StateError((_, _) -> unsafe_cast Err(msg) as _ \ r)
 
     pub def catchError(ma: StateError[r, ka, st, a], 
                         hdlr: String -> StateError[r, ka, st, a] \ ef): StateError[r, ka, st, a] \ ef= 
@@ -142,19 +142,19 @@ namespace MonadLib/StateError {
                 unsafe_cast (match ma1(s, k) {
                     case Ok(a)    => Ok(a)
                     case Err(msg) => let StateError(hdlr1) = hdlr(msg); hdlr1(s, k)
-                }) as \ r
-        )) as \ ef
+                }) as _ \ r
+        )) as _ \ ef
 
     pub def mapError(f: String -> String \ ef, ma: StateError[r, ka, st, a]): StateError[r, ka, st, a] \ ef = 
         unsafe_cast (StateError((s, k) -> 
-            apply1WithHandler(ma, s, a -> k(a), msg -> unsafe_cast Err(f(msg)) as \ r)
-        )) as \ ef
+            apply1WithHandler(ma, s, a -> k(a), msg -> unsafe_cast Err(f(msg)) as _ \ r)
+        )) as _ \ ef
 
 
     pub def update(f: s -> s \ ef): StateError[r, ka, s, Unit] \ ef = 
         unsafe_cast (StateError((s, k) -> 
-            k((), unsafe_cast f(s) as \ r)
-        )) as \ ef
+            k((), unsafe_cast f(s) as _ \ r)
+        )) as _ \ ef
 
     pub def put(st: s): StateError[r, ka, s, Unit] = 
         StateError((_, k) -> 
@@ -168,7 +168,7 @@ namespace MonadLib/StateError {
 
     pub def gets(proj: s -> a \ ef): StateError[r, ka, s, a] \ ef = 
         unsafe_cast (StateError((s, k) -> 
-            k(unsafe_cast proj(s) as \ r, s)
-        )) as \ ef
+            k(unsafe_cast proj(s) as _ \ r, s)
+        )) as _ \ ef
 
 }

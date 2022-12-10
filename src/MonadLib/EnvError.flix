@@ -102,7 +102,7 @@ namespace MonadLib/EnvError {
     ///
     pub def runEnvError(_: Region[r], ma: EnvError[r, a, env, a], e: env): Result[a, String] \ r =
         let EnvError(f) = ma;
-        let cont = a -> unsafe_cast Ok(a) as \ r;
+        let cont = a -> unsafe_cast Ok(a) as _ \ r;
         f(e, cont)
 
 
@@ -111,26 +111,26 @@ namespace MonadLib/EnvError {
 
     pub def map(f: a -> b \ ef, ma: EnvError[r, ka, env, a]): EnvError[r, ka, env, b] \ ef =
         unsafe_cast (EnvError((e, k) ->
-            apply1(ma, e, a -> k(unsafe_cast f(a) as \ r))
-        )) as \ ef
+            apply1(ma, e, a -> k(unsafe_cast f(a) as _ \ r))
+        )) as _ \ ef
 
     pub def ap(mf: EnvError[r, ka, env, a -> b \ ef], ma: EnvError[r, ka, env, a]): EnvError[r, ka, env, b] \ ef =
         unsafe_cast (EnvError((e, k) ->
             apply1(mf, e, f ->
                 apply1(ma, e, a ->
-                    k(unsafe_cast f(a) as \ r)))
-        )) as \ ef
+                    k(unsafe_cast f(a) as _ \ r)))
+        )) as _ \ ef
 
 
     pub def flatMap(f: a -> EnvError[r, ka, env, b] \ ef, ma: EnvError[r, ka, env, a]): EnvError[r, ka, env, b] \ ef =
         unsafe_cast (EnvError((e, k) ->
             apply1(ma, e, a ->
-                apply1(unsafe_cast f(a) as \ r, e, b ->
+                apply1(unsafe_cast f(a) as _ \ r, e, b ->
                     k(b)))
-        )) as \ ef
+        )) as _ \ ef
 
     pub def throwError(msg: String): EnvError[r, ka, env, a] = 
-        EnvError((_, _) -> unsafe_cast Err(msg) as \ r)
+        EnvError((_, _) -> unsafe_cast Err(msg) as _ \ r)
 
     pub def catchError(ma: EnvError[r, ka, env, a], 
                         hdlr: String -> EnvError[r, ka, env, a] \ ef): EnvError[r, ka, env, a] \ ef= 
@@ -139,13 +139,13 @@ namespace MonadLib/EnvError {
                 unsafe_cast (match ma1(e, k) {
                     case Ok(a)    => Ok(a)
                     case Err(msg) => let EnvError(hdlr1) = hdlr(msg); hdlr1(e, k)
-                }) as \ r
-        )) as \ ef
+                }) as _ \ r
+        )) as _ \ ef
 
     pub def mapError(f: String -> String \ ef, ma: EnvError[r, ka, env, a]): EnvError[r, ka, env, a] \ ef = 
         unsafe_cast (EnvError((e, k) -> 
-            apply1WithHandler(ma, e, a -> k(a), msg -> unsafe_cast Err(f(msg)) as \ r)
-        )) as \ ef
+            apply1WithHandler(ma, e, a -> k(a), msg -> unsafe_cast Err(f(msg)) as _ \ r)
+        )) as _ \ ef
 
     pub def empty(): EnvError[r, ka, env, a] = throwError("empty")
 
@@ -158,38 +158,38 @@ namespace MonadLib/EnvError {
     pub def liftGetter(f: env -> a \ ef): EnvError[r, ka, env, a] \ ef = 
         unsafe_cast (EnvError((e, k) ->
             try {
-                let ans = unsafe_cast f(e) as \ r;
+                let ans = unsafe_cast f(e) as _ \ r;
                 k(ans)
             } catch {
                 case ex: ##java.lang.Exception => 
                     import java.lang.Throwable.getMessage(): String \ r;
                     Err(getMessage(ex))
             }
-        )) as \ ef
+        )) as _ \ ef
 
     // f should not throw an exception
     pub def liftGetterResult(f: env -> Result[a, err] \ ef): EnvError[r, ka, env, a] \ ef with ToString[err] = 
         unsafe_cast (EnvError((e, k) ->
-            match (unsafe_cast f(e) as \ r) { 
+            match (unsafe_cast f(e) as _ \ r) { 
                 case Ok(a)    => k(a)
                 case Err(err) => Err(ToString.toString(err))
             } 
-        )) as \ ef
+        )) as _ \ ef
 
 
     pub def liftAction(f: Unit -> a \ ef): EnvError[r, ka, env, a] \ ef = 
         unsafe_cast (EnvError((_, k) ->
-            let a = unsafe_cast f() as \ r; 
+            let a = unsafe_cast f() as _ \ r; 
             k(a)  
-        )) as \ ef
+        )) as _ \ ef
 
     pub def liftActionResult(f: Unit -> Result[a, err] \ ef): EnvError[r, ka, env, a] \ ef with ToString[err] = 
         unsafe_cast (EnvError((_, k) ->
-            match (unsafe_cast f() as \ r) {
+            match (unsafe_cast f() as _ \ r) {
                 case Ok(a)    => k(a)
                 case Err(err) => Err(ToString.toString(err))
             } 
-        )) as \ ef
+        )) as _ \ ef
 
 
     pub def askEnv(): EnvError[r, ka, env, env] = 
@@ -200,8 +200,8 @@ namespace MonadLib/EnvError {
 
     pub def localEnv(f: env -> env1 \ ef, ma: EnvError[r, ka, env1, a]): EnvError[r, ka, env, a] \ ef = 
         unsafe_cast (EnvError((e, k) -> 
-            apply1(ma, unsafe_cast f(e) as \ r, a1 -> 
+            apply1(ma, unsafe_cast f(e) as _ \ r, a1 -> 
                 k(a1))
-        )) as \ ef
+        )) as _ \ ef
 
 }

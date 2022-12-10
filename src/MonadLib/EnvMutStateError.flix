@@ -98,7 +98,7 @@ namespace MonadLib/EnvMutStateError {
                                 e: env,
                                 s: st): Result[a, String] \ r =
         let EnvMutStateError(f) = ma;
-        let cont = a -> unsafe_cast Ok(a) as \ r;
+        let cont = a -> unsafe_cast Ok(a) as _ \ r;
         f(e, s, cont)
 
 
@@ -107,26 +107,26 @@ namespace MonadLib/EnvMutStateError {
 
     pub def map(f: a -> b \ ef, ma: EnvMutStateError[r, ka, env, st, a]): EnvMutStateError[r, ka, env, st, b] \ ef =
         unsafe_cast (EnvMutStateError((e, s, k) ->
-            apply1(ma, e, s, a -> k(unsafe_cast f(a) as \ r))
-        )) as \ ef
+            apply1(ma, e, s, a -> k(unsafe_cast f(a) as _ \ r))
+        )) as _ \ ef
 
     pub def ap(mf: EnvMutStateError[r, ka, env, st, a -> b \ ef], ma: EnvMutStateError[r, ka, env, st, a]): EnvMutStateError[r, ka, env, st, b] \ ef =
         unsafe_cast (EnvMutStateError((e, s, k) ->
             apply1(mf, e, s, f ->
                 apply1(ma, e, s, a ->
-                    k(unsafe_cast f(a) as \ r)))
-        )) as \ ef
+                    k(unsafe_cast f(a) as _ \ r)))
+        )) as _ \ ef
 
 
     pub def flatMap(f: a -> EnvMutStateError[r, ka, env, st, b] \ ef, ma: EnvMutStateError[r, ka, env, st, a]): EnvMutStateError[r, ka, env, st, b] \ ef =
         unsafe_cast (EnvMutStateError((e, s, k) ->
             apply1(ma, e, s, a ->
-                apply1(unsafe_cast f(a) as \ r, e, s, b ->
+                apply1(unsafe_cast f(a) as _ \ r, e, s, b ->
                     k(b)))
-        )) as \ ef
+        )) as _ \ ef
 
     pub def throwError(msg: String): EnvMutStateError[r, ka, env, st, a] = 
-        EnvMutStateError((_, _, _) -> unsafe_cast Err(msg) as \ r)
+        EnvMutStateError((_, _, _) -> unsafe_cast Err(msg) as _ \ r)
 
     pub def catchError(ma: EnvMutStateError[r, ka, env, st, a], 
                         hdlr: String -> EnvMutStateError[r, ka, env, st, a] \ ef): EnvMutStateError[r, ka, env, st, a] \ ef= 
@@ -135,70 +135,70 @@ namespace MonadLib/EnvMutStateError {
                 unsafe_cast (match ma1(e, s, k) {
                     case Ok(a)    => Ok(a)
                     case Err(msg) => let EnvMutStateError(hdlr1) = hdlr(msg); hdlr1(e, s, k)
-                }) as \ r
-        )) as \ ef
+                }) as _ \ r
+        )) as _ \ ef
 
     pub def mapError(f: String -> String \ ef, ma: EnvMutStateError[r, ka, env, st, a]): EnvMutStateError[r, ka, env, st, a] \ ef = 
         unsafe_cast (EnvMutStateError((e, s, k) -> 
-            apply1WithHandler(ma, e, s, a -> k(a), msg -> unsafe_cast Err(f(msg)) as \ r)
-        )) as \ ef
+            apply1WithHandler(ma, e, s, a -> k(a), msg -> unsafe_cast Err(f(msg)) as _ \ r)
+        )) as _ \ ef
 
 
     pub def liftGetter(f: env -> st -> a \ ef): EnvMutStateError[r, ka, env, st, a] \ ef = 
         unsafe_cast (EnvMutStateError((e, s, k) ->
             try {
-                let ans = unsafe_cast f(e, s) as \ r;
+                let ans = unsafe_cast f(e, s) as _ \ r;
                 k(ans)
             } catch {
                 case ex: ##java.lang.Exception => 
                     import java.lang.Throwable.getMessage(): String \ r;
                     Err(getMessage(ex))
             }
-        )) as \ ef
+        )) as _ \ ef
 
     // f should not throw an exception
     pub def liftGetterResult(f: env -> st -> Result[a, err] \ ef): EnvMutStateError[r, ka, env, st, a] \ ef with ToString[err] = 
         unsafe_cast (EnvMutStateError((e, s, k) ->
-            match (unsafe_cast f(e, s) as \ r) { 
+            match (unsafe_cast f(e, s) as _ \ r) { 
                 case Ok(a)    => k(a)
                 case Err(err) => Err(ToString.toString(err))
             } 
-        )) as \ ef
+        )) as _ \ ef
 
     pub def liftSetter!(f: env -> st -> a \ ef): EnvMutStateError[r, ka, env, st, a] \ ef = 
         unsafe_cast (EnvMutStateError((e, s, k) ->
             try {
-                let a = unsafe_cast f(e, s) as \ r; 
+                let a = unsafe_cast f(e, s) as _ \ r; 
                 k(a)
             } catch {
                 case ex: ##java.lang.Exception => 
                     import java.lang.Throwable.getMessage(): String \ r;
                     Err(getMessage(ex))
             }            
-        )) as \ ef
+        )) as _ \ ef
         
     // f should not throw an exception
     pub def liftSetterResult!(f: env -> st -> Result[a, err] \ ef): EnvMutStateError[r, ka, env, st, a] \ ef with ToString[err] = 
         unsafe_cast (EnvMutStateError((e, s, k) ->
-            match (unsafe_cast f(e, s) as \ r) {
+            match (unsafe_cast f(e, s) as _ \ r) {
                 case Ok(a)    => k(a)
                 case Err(err) => Err(ToString.toString(err))
             } 
-        )) as \ ef
+        )) as _ \ ef
 
     pub def liftAction(f: Unit -> a \ ef): EnvMutStateError[r, ka, env, st, a] \ ef = 
         unsafe_cast (EnvMutStateError((_, _, k) ->
-            let a = unsafe_cast f() as \ r; 
+            let a = unsafe_cast f() as _ \ r; 
             k(a)  
-        )) as \ ef
+        )) as _ \ ef
 
     pub def liftActionResult(f: Unit -> Result[a, err] \ ef): EnvMutStateError[r, ka, env, st, a] \ ef with ToString[err] = 
         unsafe_cast (EnvMutStateError((_, _, k) ->
-            match (unsafe_cast f() as \ r) {
+            match (unsafe_cast f() as _ \ r) {
                 case Ok(a)    => k(a)
                 case Err(err) => Err(ToString.toString(err))
             } 
-        )) as \ ef
+        )) as _ \ ef
 
 
     pub def askEnv(): EnvMutStateError[r, ka, env, st, env]  = 
@@ -209,8 +209,8 @@ namespace MonadLib/EnvMutStateError {
 
     pub def localEnv(f: env -> env1 \ ef, ma: EnvMutStateError[r, ka, env1, st, a]): EnvMutStateError[r, ka, env, st, a] \ ef = 
         unsafe_cast (EnvMutStateError((e, s, k) -> 
-            apply1(ma, unsafe_cast f(e) as \ r, s, a1 -> 
+            apply1(ma, unsafe_cast f(e) as _ \ r, s, a1 -> 
                 k(a1))
-        )) as \ ef
+        )) as _ \ ef
 
 }
