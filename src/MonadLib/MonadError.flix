@@ -42,12 +42,12 @@ namespace MonadLib/MonadError {
     pub def swapError(msg: String, ma: m[a]): m[a] with MonadError[m] = 
         MonadLib/MonadError.mapError(_ -> msg, ma)
 
-    pub def liftOption(e: err, x: Option[a]): m[a] with MonadError[m], ToString[err] = match x { 
+    pub def liftOption(e: e, x: Option[a]): m[a] with MonadError[m], ToString[e] = match x { 
         case Some(x1) => point(x1)
         case None     => MonadLib/MonadError.throwError(ToString.toString(e))
     }
 
-    pub def liftResult(x: Result[a, err]): m[a] with MonadError[m], ToString[err] = match x { 
+    pub def liftResult(x: Result[e, a]): m[a] with MonadError[m], ToString[e] = match x { 
         case Ok(x1)   => point(x1)
         case Err(msg) => MonadLib/MonadError.throwError(ToString.toString(msg))
     }

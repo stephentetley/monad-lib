@@ -25,7 +25,7 @@ namespace MonadLib {
     /// `ka` is the continuation answer type
     ///
     pub enum StateError[r: Region, ka: Type, st: Type, a: Type](
-        st -> (a -> st -> Result[ka, String] \ r) -> Result[ka, String] \ r)
+        st -> (a -> st -> Result[String, ka] \ r) -> Result[String, ka] \ r)
 
 
     instance Functor[StateError[r, ka, st]] {
@@ -79,14 +79,14 @@ namespace MonadLib/StateError {
     ///
     def apply1(ma: StateError[r, ka, st, a], 
                 s: st, 
-                k: a -> st -> Result[ka, String] \ r): Result[ka, String] \ r =
+                k: a -> st -> Result[String, ka] \ r): Result[String, ka] \ r =
         let StateError(ma1) = ma;
         ma1(s, k)
 
     def apply1WithHandler(ma: StateError[r, ka, st, a], 
                             s: st, 
-                            k: a -> st -> Result[ka, String] \ r, 
-                            handleK: String -> Result[ka, String] \ r): Result[ka, String] \ r =
+                            k: a -> st -> Result[String, ka] \ r, 
+                            handleK: String -> Result[String, ka] \ r): Result[String, ka] \ r =
         let StateError(ma1) = ma;
         match ma1(s, k) {
             case Err(msg) => handleK(msg)
@@ -98,7 +98,7 @@ namespace MonadLib/StateError {
     ///
     pub def runStateError(_: Region[r], 
                         ma: StateError[r, (st, a), st, a], 
-                        s: st): Result[(st, a), String] \ r =
+                        s: st): Result[String, (st, a)] \ r =
         let StateError(f) = ma;
         let cont = (a, s1) -> unsafe_cast Ok((s1, a)) as _ \ r;
         f(s, cont)

@@ -25,7 +25,7 @@ namespace MonadLib {
     /// `ka` is the continuation answer type
     ///
     pub enum MutStateError[r: Region, ka: Type, st: Type, a: Type](
-        st -> (a -> Result[ka, String] \ r) -> Result[ka, String] \ r)
+        st -> (a -> Result[String, ka] \ r) -> Result[String, ka] \ r)
 
 
     instance Functor[MutStateError[r, ka, st]] {
@@ -74,14 +74,14 @@ namespace MonadLib/MutStateError {
     ///
     def apply1(ma: MutStateError[r, ka, st, a], 
                 s: st, 
-                k: a -> Result[ka, String] \ r): Result[ka, String] \ r =
+                k: a -> Result[String, ka] \ r): Result[String, ka] \ r =
         let MutStateError(ma1) = ma;
         ma1(s, k)
 
     def apply1WithHandler(ma: MutStateError[r, ka, st, a], 
                             s: st, 
-                            k: a -> Result[ka, String] \ r, 
-                            handleK: String -> Result[ka, String] \ r): Result[ka, String] \ r =
+                            k: a -> Result[String, ka] \ r, 
+                            handleK: String -> Result[String, ka] \ r): Result[String, ka] \ r =
         let MutStateError(ma1) = ma;
         match ma1(s, k) {
             case Err(msg) => handleK(msg)
@@ -93,7 +93,7 @@ namespace MonadLib/MutStateError {
     ///
     pub def runMutStateError(_: Region[r], 
                         ma: MutStateError[r, a, st, a], 
-                        s: st): Result[a, String] \ r =
+                        s: st): Result[String, a] \ r =
         let MutStateError(f) = ma;
         let cont = a -> unsafe_cast Ok(a) as _ \ r;
         f(s, cont)
@@ -153,7 +153,7 @@ namespace MonadLib/MutStateError {
         )) as _ \ ef
 
     // f should not throw an exception
-    pub def liftGetterResult(f: st -> Result[a, err] \ ef): MutStateError[r, ka, st, a] \ ef with ToString[err] = 
+    pub def liftGetterResult(f: st -> Result[e, a] \ ef): MutStateError[r, ka, st, a] \ ef with ToString[e] = 
         unsafe_cast (MutStateError((s, k) ->
             match (unsafe_cast f(s) as _ \ r) { 
                 case Ok(a)  => k(a)
@@ -174,7 +174,7 @@ namespace MonadLib/MutStateError {
         )) as _ \ ef
         
     // f should not throw an exception
-    pub def liftSetterResult!(f: st -> Result[a, err] \ ef): MutStateError[r, ka, st, a] \ ef with ToString[err] = 
+    pub def liftSetterResult!(f: st -> Result[e, a] \ ef): MutStateError[r, ka, st, a] \ ef with ToString[e] = 
         unsafe_cast (MutStateError((s, k) ->
             match (unsafe_cast f(s) as _ \ r) {
                 case Ok(a)  => k(a)
@@ -188,7 +188,7 @@ namespace MonadLib/MutStateError {
             k(a)  
         )) as _ \ ef
 
-    pub def liftActionResult(f: Unit -> Result[a, err] \ ef): MutStateError[r, ka, st, a] \ ef with ToString[err] = 
+    pub def liftActionResult(f: Unit -> Result[e, a] \ ef): MutStateError[r, ka, st, a] \ ef with ToString[e] = 
         unsafe_cast (MutStateError((_, k) ->
             match (unsafe_cast f() as _ \ r) {
                 case Ok(a)  => k(a)

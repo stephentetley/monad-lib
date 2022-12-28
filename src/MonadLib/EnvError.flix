@@ -24,7 +24,7 @@ namespace MonadLib {
     /// `ka` is the continuation answer type
     ///
     pub enum EnvError[r: Region, ka: Type, env: Type, a: Type](
-        env -> (a -> Result[ka, String] \ r) -> Result[ka, String] \ r)
+        env -> (a -> Result[String, ka] \ r) -> Result[String, ka] \ r)
 
 
     instance Functor[EnvError[r, ka, env]] {
@@ -83,14 +83,14 @@ namespace MonadLib/EnvError {
     ///
     def apply1(ma: EnvError[r, ka, env, a],
                 e: env,
-                k: a -> Result[ka, String] \ r): Result[ka, String] \ r =
+                k: a -> Result[String, ka] \ r): Result[String, ka] \ r =
         let EnvError(ma1) = ma;
         ma1(e, k)
 
     def apply1WithHandler(ma: EnvError[r, ka, env, a], 
                             e: env,
-                            k: a -> Result[ka, String] \ r, 
-                            handleK: String -> Result[ka, String] \ r): Result[ka, String] \ r =
+                            k: a -> Result[String, ka] \ r, 
+                            handleK: String -> Result[String, ka] \ r): Result[String, ka] \ r =
         let EnvError(ma1) = ma;
         match ma1(e, k) {
             case Err(msg) => handleK(msg)
@@ -100,7 +100,7 @@ namespace MonadLib/EnvError {
     ///
     /// Returns the result of applying `ma` to the state `s`.
     ///
-    pub def runEnvError(_: Region[r], ma: EnvError[r, a, env, a], e: env): Result[a, String] \ r =
+    pub def runEnvError(_: Region[r], ma: EnvError[r, a, env, a], e: env): Result[String, a] \ r =
         let EnvError(f) = ma;
         let cont = a -> unsafe_cast Ok(a) as _ \ r;
         f(e, cont)
@@ -168,7 +168,7 @@ namespace MonadLib/EnvError {
         )) as _ \ ef
 
     // f should not throw an exception
-    pub def liftGetterResult(f: env -> Result[a, err] \ ef): EnvError[r, ka, env, a] \ ef with ToString[err] = 
+    pub def liftGetterResult(f: env -> Result[e, a] \ ef): EnvError[r, ka, env, a] \ ef with ToString[e] = 
         unsafe_cast (EnvError((e, k) ->
             match (unsafe_cast f(e) as _ \ r) { 
                 case Ok(a)    => k(a)
@@ -183,7 +183,7 @@ namespace MonadLib/EnvError {
             k(a)  
         )) as _ \ ef
 
-    pub def liftActionResult(f: Unit -> Result[a, err] \ ef): EnvError[r, ka, env, a] \ ef with ToString[err] = 
+    pub def liftActionResult(f: Unit -> Result[e, a] \ ef): EnvError[r, ka, env, a] \ ef with ToString[e] = 
         unsafe_cast (EnvError((_, k) ->
             match (unsafe_cast f() as _ \ r) {
                 case Ok(a)    => k(a)

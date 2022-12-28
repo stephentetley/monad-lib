@@ -25,7 +25,7 @@ namespace MonadLib {
     /// `ka` is the continuation answer type
     ///
     pub enum EnvMutStateError[r: Region, ka: Type, env: Type, st: Type, a: Type](
-        env -> st -> (a -> Result[ka, String] \ r) -> Result[ka, String] \ r)
+        env -> st -> (a -> Result[String, ka] \ r) -> Result[String, ka] \ r)
 
 
     instance Functor[EnvMutStateError[r, ka, env, st]] {
@@ -75,15 +75,15 @@ namespace MonadLib/EnvMutStateError {
     def apply1(ma: EnvMutStateError[r, ka, env, st, a],
                 e: env,
                 s: st, 
-                k: a -> Result[ka, String] \ r): Result[ka, String] \ r =
+                k: a -> Result[String, ka] \ r): Result[String, ka] \ r =
         let EnvMutStateError(ma1) = ma;
         ma1(e, s, k)
 
     def apply1WithHandler(ma: EnvMutStateError[r, ka, env, st, a], 
                             e: env,
                             s: st, 
-                            k: a -> Result[ka, String] \ r, 
-                            handleK: String -> Result[ka, String] \ r): Result[ka, String] \ r =
+                            k: a -> Result[String, ka] \ r, 
+                            handleK: String -> Result[String, ka] \ r): Result[String, ka] \ r =
         let EnvMutStateError(ma1) = ma;
         match ma1(e, s, k) {
             case Err(msg) => handleK(msg)
@@ -96,7 +96,7 @@ namespace MonadLib/EnvMutStateError {
     pub def runEnvMutStateError(_: Region[r], 
                                 ma: EnvMutStateError[r, a, env, st, a],
                                 e: env,
-                                s: st): Result[a, String] \ r =
+                                s: st): Result[String, a] \ r =
         let EnvMutStateError(f) = ma;
         let cont = a -> unsafe_cast Ok(a) as _ \ r;
         f(e, s, cont)
@@ -157,7 +157,7 @@ namespace MonadLib/EnvMutStateError {
         )) as _ \ ef
 
     // f should not throw an exception
-    pub def liftGetterResult(f: env -> st -> Result[a, err] \ ef): EnvMutStateError[r, ka, env, st, a] \ ef with ToString[err] = 
+    pub def liftGetterResult(f: env -> st -> Result[e, a] \ ef): EnvMutStateError[r, ka, env, st, a] \ ef with ToString[e] = 
         unsafe_cast (EnvMutStateError((e, s, k) ->
             match (unsafe_cast f(e, s) as _ \ r) { 
                 case Ok(a)    => k(a)
@@ -178,7 +178,7 @@ namespace MonadLib/EnvMutStateError {
         )) as _ \ ef
         
     // f should not throw an exception
-    pub def liftSetterResult!(f: env -> st -> Result[a, err] \ ef): EnvMutStateError[r, ka, env, st, a] \ ef with ToString[err] = 
+    pub def liftSetterResult!(f: env -> st -> Result[e, a] \ ef): EnvMutStateError[r, ka, env, st, a] \ ef with ToString[e] = 
         unsafe_cast (EnvMutStateError((e, s, k) ->
             match (unsafe_cast f(e, s) as _ \ r) {
                 case Ok(a)    => k(a)
@@ -192,7 +192,7 @@ namespace MonadLib/EnvMutStateError {
             k(a)  
         )) as _ \ ef
 
-    pub def liftActionResult(f: Unit -> Result[a, err] \ ef): EnvMutStateError[r, ka, env, st, a] \ ef with ToString[err] = 
+    pub def liftActionResult(f: Unit -> Result[e, a] \ ef): EnvMutStateError[r, ka, env, st, a] \ ef with ToString[e] = 
         unsafe_cast (EnvMutStateError((_, _, k) ->
             match (unsafe_cast f() as _ \ r) {
                 case Ok(a)    => k(a)

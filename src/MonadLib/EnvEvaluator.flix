@@ -32,7 +32,7 @@ namespace MonadLib {
     /// `ka` is the continuation answer type
     ///
     pub enum EnvEvaluator[r: Region, ka: Type, env: Type, st: Type, a: Type](
-        env -> st -> (a -> Result[ka, String] \ r) -> Result[ka, String] \ r)
+        env -> st -> (a -> Result[String, ka] \ r) -> Result[String, ka] \ r)
 
 
     instance Functor[EnvEvaluator[r, ka, env, st]] { 
@@ -86,7 +86,7 @@ namespace MonadLib/EnvEvaluator {
     def apply1(ma: EnvEvaluator[r, ka, env, st, a], 
                 e: env,
                 s: st, 
-                k: a -> Result[ka, String] \ r): Result[ka, String] \ r =
+                k: a -> Result[String, ka] \ r): Result[String, ka] \ r =
         let EnvEvaluator(ma1) = ma;
         ma1(e, s, k)
 
@@ -94,8 +94,8 @@ namespace MonadLib/EnvEvaluator {
     def apply1WithHandler(ma: EnvEvaluator[r, ka, env, st, a], 
                             e: env,
                             s: st, 
-                            k: a -> Result[ka, String] \ r, 
-                            handleK: String -> Result[ka, String] \ r): Result[ka, String] \ r =
+                            k: a -> Result[String, ka] \ r, 
+                            handleK: String -> Result[String, ka] \ r): Result[String, ka] \ r =
         let EnvEvaluator(ma1) = ma;
         match ma1(e, s, k) {
             case Err(msg) => handleK(msg)
@@ -109,7 +109,7 @@ namespace MonadLib/EnvEvaluator {
     pub def runEnvEvaluator(_: Region[r], 
                             ma: EnvEvaluator[r, a, env, st, a], 
                             e: env,
-                            s: st): Result[a, String] \ r =
+                            s: st): Result[String, a] \ r =
         let EnvEvaluator(f) = ma;
         let cont = a -> unsafe_cast Ok(a) as _ \ r;
         f(e, s, cont)
@@ -177,7 +177,7 @@ namespace MonadLib/EnvEvaluator {
         )) as _ \ ef
 
     // f should not throw an exception
-    pub def liftGetterResult(f: env -> st -> Result[a, err] \ ef): EnvEvaluator[r, ka, env, st, a] \ ef with ToString[err] = 
+    pub def liftGetterResult(f: env -> st -> Result[e, a] \ ef): EnvEvaluator[r, ka, env, st, a] \ ef with ToString[e] = 
         unsafe_cast (EnvEvaluator((e, s, k) ->
             match (unsafe_cast f(e, s) as _ \ r) { 
                 case Ok(a)    => k(a)
@@ -192,7 +192,7 @@ namespace MonadLib/EnvEvaluator {
             k(a)
         )) as _ \ ef
 
-    pub def liftActionResult(f: Unit -> Result[a, err] \ ef): EnvEvaluator[r, ka, env, st, a] \ ef with ToString[err] = 
+    pub def liftActionResult(f: Unit -> Result[e, a] \ ef): EnvEvaluator[r, ka, env, st, a] \ ef with ToString[e] = 
         unsafe_cast (EnvEvaluator((_, _, k) ->
             match (unsafe_cast f() as _ \ r) {
                 case Ok(a)    => k(a)
